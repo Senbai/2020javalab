@@ -14,6 +14,8 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 import cas.token.JwtUtils;
+import database.UserDao;
+import domains.User;
 
 @WebServlet("/login.do")
 public class LoginController extends HttpServlet {
@@ -42,9 +44,15 @@ public class LoginController extends HttpServlet {
 		String user_id = req.getParameter("id");
 		String user_pwd = req.getParameter("pwd");
 		String LOCAL_SERVICE = req.getParameter("LOCAL_SERVICE");
-
+		User user=null;
+		try {
+			user = UserDao.get(user_id);
+		} catch (Exception e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
 		// 2.验证账号和密码，验证失败，则重新登录
-		if (false) {
+		if (user==null&&!user_pwd.equals(user.getPwd())) {
 			// 用户账号或密码错误重新登录
 			req.setAttribute("LOCAL_SERVICE", LOCAL_SERVICE);
 			req.getRequestDispatcher("/WEB-INF/jsp/login.jsp").forward(req, resp);
