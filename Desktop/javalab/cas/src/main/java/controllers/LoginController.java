@@ -52,11 +52,14 @@ public class LoginController extends HttpServlet {
 			e1.printStackTrace();
 		}
 		// 2.验证账号和密码，验证失败，则重新登录
-		if (user==null&&!user_pwd.equals(user.getPwd())) {
+		if (user==null) {
 			// 用户账号或密码错误重新登录
 			req.setAttribute("LOCAL_SERVICE", LOCAL_SERVICE);
 			req.getRequestDispatcher("/WEB-INF/jsp/login.jsp").forward(req, resp);
 			return;
+		}else if(!user_pwd.equals(user.getPwd())){
+			req.setAttribute("LOCAL_SERVICE", LOCAL_SERVICE);
+			req.getRequestDispatcher("/WEB-INF/jsp/login.jsp").forward(req, resp);
 		}
 		// 3.登录成功，分配令牌
 		HttpSession session = req.getSession();
@@ -72,9 +75,6 @@ public class LoginController extends HttpServlet {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		// jwt验证
-		// Map<String, String> res = JwtUtils.verifyToken(token);
-		
 		// 4.跳转到子系统
 		session.setAttribute("token", token);
 		resp.sendRedirect(LOCAL_SERVICE+"?token="+token);
