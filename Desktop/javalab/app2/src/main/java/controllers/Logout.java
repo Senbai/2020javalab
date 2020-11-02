@@ -11,22 +11,10 @@ import javax.servlet.http.HttpServletResponse;
 
 @WebServlet(value = "/logout")
 public class Logout extends HttpServlet {
+	static String SSO_SERVER_URL = "http://localhost:8080/cas/logout.do";
 	@Override
 	protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-		//获取cookie
-		Cookie[] cookies=req.getCookies();
-
-		if (cookies != null) {
-			for (Cookie cookie : cookies) {
-
-				cookie.setMaxAge(0);
-
-				cookie.setPath("/");
-
-				resp.addCookie(cookie);
-
-			}
-		}
+		resp.sendRedirect(SSO_SERVER_URL+"?LOCAL_SERVICE="+req.getContextPath()+"/view.do");
 	}
 
 	@Override

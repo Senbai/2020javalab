@@ -5,9 +5,8 @@ import javax.servlet.annotation.WebFilter;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
+
 import java.io.IOException;
-import java.net.http.HttpRequest;
 
 @WebFilter(urlPatterns = "*.do")
 public class SingleSignOnFilter implements Filter {
@@ -24,24 +23,23 @@ public class SingleSignOnFilter implements Filter {
 			throws IOException, ServletException {
 		HttpServletRequest httpRequest = (HttpServletRequest) request;
 		HttpServletResponse httpResponse = (HttpServletResponse) response;
-		HttpSession session = httpRequest.getSession();
-		Cookie[] cookie = httpRequest.getCookies();
-		boolean local_isLogin = false;
-		if (cookie != null) {
-			for (Cookie c : cookie) {
-				if ("isLogin".equals(c.getName()) && "YES".equals(c.getValue())) {
-					local_isLogin = true;
+		Cookie[] cookies = httpRequest.getCookies();
+		String token = null;
+		if(cookies!=null) {
+			for(Cookie c:cookies) {
+				if(c.getName()=="cookie") {
+					token = c.getValue();
 				}
 			}
 		}
-		if (!local_isLogin) {
-			String token = httpRequest.getParameter("token");
-			if (token == null) {
-				httpResponse.sendRedirect(SSO_SERVER_URL + "?" + "LOCAL_SERVICE=" + httpRequest.getRequestURL());
-				return;
-			}
+		if( httpRequest.getParameter("token")!=null) {
+			token = httpRequest.getParameter("token");
+		}
+		if (token!=null) {
 			String verifyResult = httpRequest.getParameter("verify_result");
+			
 			if (verifyResult == null) {
+				//token 还未认证，先认证token是否有效
 				httpResponse.sendRedirect(SSO_VERIFY_URL + "?" + "LOCAL_SERVICE=" + httpRequest.getRequestURL() + "&token=" + token);
 				return;
 			}
@@ -51,14 +49,16 @@ public class SingleSignOnFilter implements Filter {
 				return;
 			}
 			// token有效，登录系统
-			Cookie co = new Cookie("isLogin", "YES");
-			httpResponse.addCookie(co);
+			Cookie c=new Cookie("token",token);
+			httpResponse.addCookie(c);
 			chain.doFilter(request, response);
 			return;
 		}
-		// 系统未登录，则交给认证中心，重新登录。
-		httpResponse.sendRedirect(SSO_SERVER_URL + "?" + "LOCAL_SERVICE=" + httpRequest.getRequestURL());
-		return;
+		else {
+			//系统未登录，请求认证中心生成token登陆系统
+			httpResponse.sendRedirect(SSO_SERVER_URL + "?" + "LOCAL_SERVICE=" + httpRequest.getRequestURL());
+			return;
+		}
 	}
 
 	@Override

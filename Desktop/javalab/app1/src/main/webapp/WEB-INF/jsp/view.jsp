@@ -8,10 +8,6 @@
 </head>
 <body>
 <p>这是App1</p>
-id:${user.id }
-name:${user.name }
-age:${user.age }
-email:${user.email }
-<p><a href="http://localhost:8080/cas/logout.do">注销</a></p>
+<p><a href="logout">注销</a></p>
 </body>
 </html>

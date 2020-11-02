@@ -25,13 +25,37 @@ public class LoginController extends HttpServlet {
 	@Override
 	protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 		//是否已登录
-		HttpSession session = req.getSession();
 		String LOCAL_SERVICE = req.getParameter("LOCAL_SERVICE");
-		if(session.getAttribute("isLogin")!=null) {
-			String token = session.getAttribute("token").toString();
-			req.setAttribute("token", token);
-			resp.sendRedirect(LOCAL_SERVICE+"?token="+token);
-			return;
+		Cookie[] cookies = req.getCookies();
+		String sid = null;
+		if(cookies!=null) {
+			for(Cookie c:cookies) {
+				if("sid".equals(c.getName())) {
+					sid = c.getValue();
+				}
+			}
+		}
+		if(sid!=null) {
+			boolean flag = SessionMap.have(sid);
+			if(flag){
+				//签发JWT
+				String token = "";
+				HttpSession session = SessionMap.getSession(sid);
+				String user_id = (String)session.getAttribute("user_id");
+				// 储存
+				Map<String, String> map = new HashMap<>();
+				map.put("user_id", user_id + "");
+				map.put("sid", sid);
+				map.put(LOCAL_SERVICE, "IS_LOGIN");
+				try {
+					token = JwtUtils.createToken(map);
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+				// 4.跳转到子系统
+				resp.sendRedirect(LOCAL_SERVICE+"?token="+token);
+				return;
+			}
 		}
 		//未登录，跳转登录页面
 		req.setAttribute("LOCAL_SERVICE", LOCAL_SERVICE);
@@ -63,20 +87,25 @@ public class LoginController extends HttpServlet {
 		}
 		// 3.登录成功，分配令牌
 		HttpSession session = req.getSession();
-		session.setAttribute("isLogin", true);
+		String sid = session.getId()+user_id;
+		Cookie cookie =new Cookie("sid",sid);
+		resp.addCookie(cookie);
+		if(!SessionMap.have(sid)) {
+			SessionMap.put(sid,session);
+		}
 		session.setAttribute("user_id", user_id);
 		String token = "";
 		// 储存
 		Map<String, String> map = new HashMap<>();
 		map.put("user_id", user_id + "");
-		// map.put("name", mobile);
+		map.put("sid", sid);
+		map.put(LOCAL_SERVICE, "IS_LOGIN");
 		try {
 			token = JwtUtils.createToken(map);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		// 4.跳转到子系统
-		session.setAttribute("token", token);
 		resp.sendRedirect(LOCAL_SERVICE+"?token="+token);
 	}
 

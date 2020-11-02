@@ -27,10 +27,9 @@ public class VerifyController extends HttpServlet {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		String user = session.getAttribute("user_id").toString();
-		
 		String user_id =res.get("user_id");
-		if(user.equals(user_id)) {
+		String sid = session.getId()+user_id;
+		if(SessionMap.have(session.getId()+user_id)&&sid.equals(res.get("sid"))) {
 			resp.sendRedirect(LOCAL_SERVICE+"?token="+token+"&verify_result=YES");
 			return;
 		}
